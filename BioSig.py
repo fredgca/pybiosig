@@ -411,26 +411,64 @@ class BioSig_console:
         return result_rpy
     ####################################### END #################################
 
+    def check_chromossome_validity(self, parsed_chromossome):
+        testing_chromossome = parsed_chromossome.strip().split(",")
+        try:
+            list_parsed_chromossome = [int(x) for x in testing_chromossome]
+            return list_parsed_chromossome
+        except ValueError:
+            print "ValueError"
+            message_console = "wm:0, bm:0, wd:0, bd:0, dr:0, chr:0(0), sd:0, of:0\n"   
+            message_file_output = "0, 0, 0, 0, 0, 0, 0\n" 
+            if self.display_output:
+                print message_console
+            else:
+                pass 
+
+            self.output.write(message_file_output)
+            return 0
+    ####################################### END #################################
+
+
+    def calculate_chromossome_lenght_penalty(self, chromossome):
+        """Given a chromossome, calculates its size penalty"""
+        chromossome_len = float(len(chromossome))
+        chromossome_sum = float(sum(list(chromossome)))
+        number_of_groups = float(len(self.groups_indexes.keys()))
+        chromossome_ratio = 0.0
+
+        if chromossome_sum < self.biosigbiosignature_min_acceptable_size:
+            chromossome_ratio = 1 
+            if self.display_output:
+                print "unacceptable chromossome size"
+
+        elif chromossome_sum >= self.biosigbiosignature_min_acceptable_size and chromossome_sum < self.biosigbiosignature_min_size:
+            chromossome_ratio = (self.buffer_penalty*((self.biosigbiosignature_min_size+1)- chromossome_sum))/chromossome_len
+            if self.display_output:
+                print "chromossome size too small(buffer zone)"
+
+        elif chromossome_sum >= self.biosigbiosignature_min_size and chromossome_sum <= self.biosigbiosignature_max_size:
+            chromossome_ratio = 0#0.01
+            if self.display_output:
+                print "ideal chromosssome size"
+
+        else:
+            chromossome_ratio = chromossome_sum/chromossome_len
+
+        return chromossome_ratio
+    ####################################### END #################################
+
     def check_clusters(self,chromossome):
         """
         input: chromossome in pyevolve format
         return: the value of the objetive function that is.... in development
         """
         ############## Calculate chromossome size penalties ############
-        chromossome_len = len(chromossome)
-        chromossome_sum = sum(list(chromossome))
-        chromossome_ratio = 0
-
-        if chromossome_sum < self.biosigbiosignature_min_acceptable_size:
-            chromossome_ratio = len(self.groups_indexes.keys())/2
-        elif chromossome_sum >= self.biosigbiosignature_min_acceptable_size and chromossome_sum < self.biosigbiosignature_min_size:
-            chromossome_ratio = (self.buffer_penalty*((self.biosigbiosignature_min_size+1)- chromossome_sum))/chromossome_len
-        elif chromossome_sum >= self.biosigbiosignature_min_size and chromossome_sum <= self.biosigbiosignature_max_size:
-            chromossome_ratio = 0.01
-        else:
-            chromossom_ratio = float(chromossome_sum)/chromossome_len
-
+        chromossome_len = float(len(chromossome))
+        chromossome_sum = float(sum(list(chromossome)))
+        chromossome_ratio = self.calculate_chromossome_lenght_penalty(chromossome)
         ###########
+
         results = []
         bootstrap_values = []
         #here, execute pvclust with data from the "chromossome"
@@ -479,44 +517,11 @@ class BioSig_console:
         ############## Calculate chromossome size penalties ############
         chromossome_len = float(len(chromossome))
         chromossome_sum = float(sum(list(chromossome)))
-        number_of_groups = float(len(self.groups_indexes.keys()))
-        chromossome_ratio = 0.0
+        chromossome_ratio = self.calculate_chromossome_lenght_penalty(chromossome)
 
-        if chromossome_sum < self.biosigbiosignature_min_acceptable_size:
-            chromossome_ratio = 1 
-            if self.display_output:
-                print "unacceptable chromossome size"
-
-        elif chromossome_sum >= self.biosigbiosignature_min_acceptable_size and chromossome_sum < self.biosigbiosignature_min_size:
-            chromossome_ratio = (self.buffer_penalty*((self.biosigbiosignature_min_size+1)- chromossome_sum))/chromossome_len
-            if self.display_output:
-                print "chromossome size too small(buffer zone)"
-
-        elif chromossome_sum >= self.biosigbiosignature_min_size and chromossome_sum <= self.biosigbiosignature_max_size:
-            chromossome_ratio = 0#0.01
-            if self.display_output:
-                print "ideal chromosssome size"
-
-        else:
-            chromossome_ratio = chromossome_sum/chromossome_len
-        
         ############## Creating distances matrix with R ############
         parsed_chromossome = self.parse_chromossome(chromossome)
-        teste = parsed_chromossome.strip().split(",")
-        try:
-            list_parsed_chromossome = [int(x) for x in teste]
-        except ValueError:
-            print "ValueError"
-            message_console = "wm:0, bm:0, wd:0, bd:0, dr:0, chr:0(0), sd:0, of:0\n"   
-            message_file_output = "0, 0, 0, 0, 0, 0, 0\n" 
-            if self.display_output:
-                print message_console
-            else:
-                pass 
-
-            self.output.write(message_file_output)
-            return 0
-        
+        list_parsed_chromossome = self.check_chromossome_validity(parsed_chromossome)
         r.assign('chromossome',list_parsed_chromossome)
         temp_output = Temporary_output()
         sys.stdout = temp_output
@@ -534,7 +539,6 @@ class BioSig_console:
         sys.stdout = sys.__stdout__
         #Creating matrix with different distances
         groups_indexes = self.groups_indexes
-
         r('within_group_distances_matrix <- dist_matrix')
         r('between_group_distances_matrix <- dist_matrix')
         samples = 0
@@ -600,7 +604,6 @@ class BioSig_console:
             return 0
         else:
             return objective_function
-    ####################################### END #################################
 
 class BioSig(BioSig_console, threading.Thread):
 #        threading.Thread.__init__(self)    
