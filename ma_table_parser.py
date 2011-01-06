@@ -142,7 +142,6 @@ class MAGE_TAB_data_matrix(threading.Thread):
         r('positives <- raw_pvalues < %s' %self.p_value_threshold)
         r('row_names <- rownames(data)[positives]')
         r('col_names <- c(c("Sonde"), colnames(data))')
-        r('print(raw_pvalues)')
         data_dim = r('dim(data)')
         selected_dim = r('length(row_names)')
         print "Positive genes: %s of %s => %s" %(str(selected_dim), str(data_dim[0]), str(float(selected_dim)/data_dim[0])) 
