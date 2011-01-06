@@ -121,18 +121,13 @@ class MAGE_TAB_data_matrix(threading.Thread):
         r('%s' %self.r_factors)
         r('groups <- factor(groups)')
         print "Checking loaded data before filtering"
-        print "r('print(groups)')"
-        print r('print(groups)')
-        print "r('length(groups)')"
-        print r('length(groups)')
-        print "print r('dim(data)')"
-        print r('dim(data)')
-        print r('data[1,]')
-        print "r('colnames(data)')"
-        print r('colnames(data)')
-        print "r('length(colnames(data))')"
-        print r('length(colnames(data))')
-        print "Unspecific filtering can take some minutes. Please, wait for the ending message."
+        print "\nSample's group, recognized by R: ", r('groups')
+        print "\nNumber of groups recognized by R: ", r('length(groups)')
+        print "\nData dimensions loaded in R: ", r('dim(data)')
+        print "\nFirst line of loaded data (5 cols): ", r('data[1,1:5]')
+        print "\nColumn names: ", r('colnames(data)')
+        print "\nNumber of columns: ", r('length(colnames(data))')
+        print "\n\nUnspecific filtering can take some minutes. Please, wait for the ending message."
         filter_function = ""
         if self.filter_method == "kruskal-Wallis":
             filter_function = 'filter_function <- function(x){kruskal.test(x~groups)$p.value}' 
@@ -141,9 +136,13 @@ class MAGE_TAB_data_matrix(threading.Thread):
 
         r('%s' %filter_function)
         r('raw_pvalues <- apply(data, 1, filter_function)')
+        if self.filter_method == "kruskal-Wallis":
+            r('raw_pvalues[is.na(raw_pvalues)] <- 1') 
+
         r('positives <- raw_pvalues < %s' %self.p_value_threshold)
         r('row_names <- rownames(data)[positives]')
         r('col_names <- c(c("Sonde"), colnames(data))')
+        r('print(raw_pvalues)')
         data_dim = r('dim(data)')
         selected_dim = r('length(row_names)')
         print "Positive genes: %s of %s => %s" %(str(selected_dim), str(data_dim[0]), str(float(selected_dim)/data_dim[0])) 
