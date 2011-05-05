@@ -522,6 +522,11 @@ class BioSig_console:
         ############## Creating distances matrix with R ############
         parsed_chromossome = self.parse_chromossome(chromossome)
         list_parsed_chromossome = self.check_chromossome_validity(parsed_chromossome)
+        #This 'if' prevents checking a null signature
+        #and prevents an unexpected interruption 
+        if not list_parsed_chromossome:
+            return 0
+
         r.assign('chromossome',list_parsed_chromossome)
         temp_output = Temporary_output()
         sys.stdout = temp_output
