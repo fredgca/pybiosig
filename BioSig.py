@@ -382,8 +382,14 @@ class BioSig_console:
         return: return the cluster tree in pvclust format. If passed True, plot it graphically
         """   
         parsed_chromossome = self.parse_chromossome(chromossome)
-        teste = parsed_chromossome.strip().split(",")
-        list_parsed_chromossome = [int(x) for x in teste]
+#        teste = parsed_chromossome.strip().split(",")
+#        list_parsed_chromossome = [int(x) for x in teste]
+        list_parsed_chromossome = self.check_chromossome_validity(parsed_chromossome)
+        #This 'if' prevents checking a null signature
+        #and prevents an unexpected interruption 
+        if not list_parsed_chromossome:
+            return 0
+
         r.assign('chromossome',list_parsed_chromossome)
         r('print(rownames(data[chromossome,]))')
         temp_output = Temporary_output()
